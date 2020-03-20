@@ -28,6 +28,8 @@ public class Report {
   private List<String> additionalCommentary;
   private List<Double> supportLevels;
   private List<Double> resistanceLevels;
+  private Double gainPercent = null;
+  private Double losePercent = null;
 
   public Report() {
     consecutiveFall = new ConsecutiveFall();
@@ -252,6 +254,26 @@ public class Report {
 
       // Descending Order
       return (volumeMultiple2 > volumeMultiple1) ? 1 : -1;
+    }
+  };
+
+  public static Comparator<Report> GainerComparator = new Comparator<Report>() {
+    public int compare(Report o1, Report o2) {
+      double gainPercent1 = o1.gainPercent;
+      double gainPercent2 = o2.gainPercent;
+
+      // Descending Order
+      return (gainPercent2 > gainPercent1) ? 1 : -1;
+    }
+  };
+
+  public static Comparator<Report> LoserComparator = new Comparator<Report>() {
+    public int compare(Report o1, Report o2) {
+      double losePercent1 = o1.losePercent;
+      double losePercent2 = o2.losePercent;
+
+      // Descending Order
+      return (losePercent2 > losePercent1) ? 1 : -1;
     }
   };
 }

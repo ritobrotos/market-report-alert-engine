@@ -19,10 +19,10 @@ public class ViewReport {
             + report.getConsecutiveRise().getNoOfDays() + " day/s and went up "
             + report.getConsecutiveRise().getPercentageIncrease() + "%");
 
-        System.out.println("Resistance Levels: ");
-        for (int i = 0; i < report.getResistanceLevels().size(); i++) {
-          System.out.print(report.getResistanceLevels().get(i) + " ,  ");
-        }
+//        System.out.println("Resistance Levels: ");
+//        for (int i = 0; i < report.getResistanceLevels().size(); i++) {
+//          System.out.print(report.getResistanceLevels().get(i) + " ,  ");
+//        }
       }
       System.out.println();
     }
@@ -56,18 +56,47 @@ public class ViewReport {
     }
   }
 
-  public void viewStocksXPercentHingherThanMonthlyLow(List<Report> reports) {
+  public void viewStocksXPercentHigherThanMonthlyLow(List<Report> reports) {
     System.out.println("\n\n\n");
     for (Report report: reports) {
       double ltp = report.getLastClosePrice();
-      double montlyLow = report.getMonthLowHigh().getLowVal();
-      double diffPerc = MathUtility.diffPercent(ltp, montlyLow);
+      double monthlyLow = report.getMonthLowHigh().getLowVal();
+      double diffPerc = MathUtility.diffPercent(ltp, monthlyLow);
 
       if (diffPerc > 8.5D) {
         System.out.println(report.getStockFact().getYahooAlias()
             + " is above " + diffPerc + "% "
-            + " from Monthly Low of " + MathUtility.twoDecimalPlace(montlyLow));
+            + " from Monthly Low of " + MathUtility.twoDecimalPlace(monthlyLow));
       }
+    }
+  }
+
+  public void viewStocksXPercentLowerThanMonthlyHigh(List<Report> reports) {
+    System.out.println("\n\n\n");
+    for (Report report: reports) {
+      double ltp = report.getLastClosePrice();
+      double monthlyHigh = report.getMonthLowHigh().getHighVal();
+      double diffPerc = MathUtility.declinePercent(ltp, monthlyHigh);
+
+      if (diffPerc > 8.5D) {
+        System.out.println(report.getStockFact().getYahooAlias()
+            + " is below " + diffPerc + "% "
+            + " from Monthly High of " + MathUtility.twoDecimalPlace(monthlyHigh));
+      }
+    }
+  }
+
+  public void viewTodaysGainers(List<Report> reports) {
+    System.out.println("\n\n\n");
+    for (Report report : reports) {
+      System.out.println(report.getStockFact().getYahooAlias() + " gained: " + report.getGainPercent());
+    }
+  }
+
+  public void viewTodaysLosers(List<Report> reports) {
+    System.out.println("\n\n\n");
+    for (Report report : reports) {
+      System.out.println(report.getStockFact().getYahooAlias() + " lost: " + report.getLosePercent());
     }
   }
 }

@@ -25,44 +25,70 @@ public class EngulfingIndicator {
   private static double LESSER_THAN_DIFFERENCE_FACTOR = 0.998;
   private static double LESSER_THAN_DIFFERENCE_FACTOR_FOR_BULLISH_ENGULFING = 0.995;
   private static double CANDLE_SIZE_PERCENTAGE = 1.5;
+  private static int HISTORICAL_PERIOD = Constants.FETCH_HISTORY_QUARTERLY;
 
   private static double totalEntries = 0;
-  private static final boolean DATA_FROM_CACHE = false;
+  private static final boolean DATA_FROM_CACHE = true;
+  private static final boolean DATE_CONDITION_APPLICABLE = true;
+  private static final String DATE_SCANNING = "09-Jan-2020";
 
   public static void main(String[] args) {
-    findTotalEntries();
+    EngulfingIndicator engulfingIndicator = new EngulfingIndicator();
+    engulfingIndicator.findTotalEntries();
 //    testEngulfingIndicatorFunctionality();
   }
 
-  private static void testEngulfingIndicatorFunctionality() {
-    StockFact pnb = new StockFact("GRASIM", "GRASIM.NS");
+//  private static void testEngulfingIndicatorFunctionality() {
+//    StockFact bata = new StockFact("Bharat Heavy Electricals Limited", "BHEL.NS");
+//
+//    List<Quote> history = HistoricalDataService.getHistoricalDataWithCacheOption(
+//        bata, HISTORICAL_PERIOD, DATA_FROM_CACHE);
+//
+//    findBearishEngulfing(history);
+//    findBullishEngulfing(history);
+//  }
 
-    List<Quote> history = HistoricalDataService.getHistoricalDataWithCacheOption(
-        pnb, Constants.FETCH_HISTORY_QUARTERLY, DATA_FROM_CACHE);
-
-    findBearishEngulfing(history);
-    findBullishEngulfing(history);
-  }
-
-  private static void findTotalEntries() {
+  private void findTotalEntries() {
     List<StockFact> fnoStockList = FnoStockList.getFnoStockList();
     for (StockFact stock : fnoStockList) {
       List<Quote> history = HistoricalDataService.getHistoricalDataWithCacheOption(
-          stock, Constants.FETCH_HISTORY_QUARTERLY, DATA_FROM_CACHE);
+          stock, HISTORICAL_PERIOD, DATA_FROM_CACHE);
 
       if (history == null || history.size() <= 1) {
         continue;
       }
 
       System.out.println(stock.getName());
-      findBearishEngulfing(history);
-      findBullishEngulfing(history);
+      if(DATE_CONDITION_APPLICABLE) {
+        findBearishBullishEngulfingDateSpecific(history, DATE_SCANNING);
+      } else {
+        findBearishBullishEngulfingAllDays(history);
+      }
+
+//      findBullishEngulfing(history);
       System.out.println("==================");
     }
     System.out.println("Total Entries: " + totalEntries);
   }
 
-  private static void findBearishEngulfing(List<Quote> history) {
+  private static void findBearishBullishEngulfingDateSpecific(List<Quote> history, String specificDate) {
+    for (int i = 1; i < history.size(); i++) {
+      double prevOpenPrice = history.get(i-1).getOpen();
+      double prevClosePrice = history.get(i-1).getClose();
+      double currOpenPrice = history.get(i).getOpen();
+      double currClosePrice = history.get(i).getClose();
+
+      String dateString = DateUtility.dateToStringFormat1(history.get(i).getDate());
+      if (!dateString.equalsIgnoreCase(specificDate)) {
+        continue;
+      }
+
+      isBearishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
+      isBullishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
+    }
+  }
+
+  private static void findBearishBullishEngulfingAllDays(List<Quote> history) {
     for (int i = 1; i < history.size(); i++) {
       double prevOpenPrice = history.get(i-1).getOpen();
       double prevClosePrice = history.get(i-1).getClose();
@@ -70,8 +96,20 @@ public class EngulfingIndicator {
       double currClosePrice = history.get(i).getClose();
 
       isBearishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
+      isBullishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
     }
   }
+
+//  private static void findBearishEngulfing(List<Quote> history) {
+//    for (int i = 1; i < history.size(); i++) {
+//      double prevOpenPrice = history.get(i-1).getOpen();
+//      double prevClosePrice = history.get(i-1).getClose();
+//      double currOpenPrice = history.get(i).getOpen();
+//      double currClosePrice = history.get(i).getClose();
+//
+//      isBearishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
+//    }
+//  }
 
   private static void isBearishEngulfingCriteriaValid(double prevOpenPrice, double prevClosePrice, double currOpenPrice,
                                                       double currClosePrice, Quote quote) {
@@ -81,21 +119,26 @@ public class EngulfingIndicator {
         && currClosePrice < (prevOpenPrice * LESSER_THAN_DIFFERENCE_FACTOR)
         && currClosePrice < (prevClosePrice * LESSER_THAN_DIFFERENCE_FACTOR)
         && declinePercent >= CANDLE_SIZE_PERCENTAGE) {
-      System.out.println("Bearish Engulfing on: " + DateUtility.dateToStringFormat1(quote.getDate()));
+      System.out.println("Bearish Engulfing on: " + DateUtility.dateToStringFormat1(quote.getDate())
+        + " :: Candle size in Percent: " + declinePercent);
       totalEntries++;
     }
   }
 
-  private static void findBullishEngulfing(List<Quote> history) {
-    for (int i = 1; i < history.size(); i++) {
-      double prevOpenPrice = history.get(i - 1).getOpen();
-      double prevClosePrice = history.get(i - 1).getClose();
-      double currOpenPrice = history.get(i).getOpen();
-      double currClosePrice = history.get(i).getClose();
-
-      isBullishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
-    }
-  }
+//  private static void findBullishEngulfing(List<Quote> history) {
+//    for (int i = 1; i < history.size(); i++) {
+//      double prevOpenPrice = history.get(i - 1).getOpen();
+//      double prevClosePrice = history.get(i - 1).getClose();
+//      double currOpenPrice = history.get(i).getOpen();
+//      double currClosePrice = history.get(i).getClose();
+//
+//      if (currOpenPrice == 0.0D) {
+//        continue;
+//      }
+//
+//      isBullishEngulfingCriteriaValid(prevOpenPrice, prevClosePrice, currOpenPrice, currClosePrice, history.get(i));
+//    }
+//  }
 
   /**
    * Condition for Bullish Engulfing:
@@ -113,7 +156,8 @@ public class EngulfingIndicator {
         && currClosePrice > (prevOpenPrice * GREATER_THAN_DIFFERENCE_FACTOR)
         && currClosePrice > (prevClosePrice * GREATER_THAN_DIFFERENCE_FACTOR)
         && risePercent >= CANDLE_SIZE_PERCENTAGE) {
-      System.out.println("Bullish Engulfing on: " + DateUtility.dateToStringFormat1(quote.getDate()));
+      System.out.println("Bullish Engulfing on: " + DateUtility.dateToStringFormat1(quote.getDate())
+        + " :: Candle size in Percent: " + risePercent);
       totalEntries++;
     }
   }

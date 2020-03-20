@@ -2,8 +2,13 @@ package main.java.service.automation;
 
 import com.google.common.collect.Lists;
 
+import constant.ConstantVariable;
+import constant.YHDStockUrlList;
+import main.java.constant.Constants;
+import main.java.constant.FnoStockList;
 import model.Quote;
 import model.StockFact;
+import org.apache.commons.collections4.CollectionUtils;
 import service.yahooFinance.HistoricalDataService;
 import ulility.MathUtility;
 import ulility.StockHistoryUtility;
@@ -19,11 +24,27 @@ public class BreakoutService {
   private List<Double> resistanceLevels;
   final int SEGMENT_SIZE = 4;
   final double TOTAL_POINTS_FRACTION = 0.20D;
+  private static final boolean GET_DATA_FROM_CACHE = true;
 
   public static void main(String srgs[]) {
-    StockFact stock = new StockFact("Power Grid Corporation of India Limited", "POWERGRID.NS");
-    List<Quote> history = HistoricalDataService.getHistoricalData(stock, 180);
-    BreakoutService obj = new BreakoutService(history, stock);
+//    StockFact stock = new StockFact("Power Grid Corporation of India Limited", "POWERGRID.NS");
+
+    List<StockFact> fnoStockList = FnoStockList.getFnoStockList();
+    for (StockFact stock : fnoStockList) {
+      new BreakoutService(stock);
+    }
+  }
+
+  public BreakoutService(StockFact stock) {
+    history = HistoricalDataService.getHistoricalDataWithCacheOption(
+        stock,
+        ConstantVariable.FETCH_HISTORY_HALF_YEARLY, GET_DATA_FROM_CACHE);
+
+    if (CollectionUtils.isNotEmpty(history)) {
+      int size = history.size();
+      System.out.println(stock.getName() + " ~~ LTP :: " + MathUtility.twoDecimalPlace(history.get(size-1).getClose()) );
+      displaySupportResistanceLevels();
+    }
   }
 
   public BreakoutService(List<Quote> historyParam, StockFact stock) {
@@ -31,7 +52,7 @@ public class BreakoutService {
     findSupportResistanceLevels();
   }
 
-  private void findSupportResistanceLevels() {
+  public void findSupportResistanceLevels() {
     List<Double> localMins = Lists.newArrayList();
     List<Double> localMaxs = Lists.newArrayList();
 
@@ -40,6 +61,20 @@ public class BreakoutService {
     findSupportLevels(localMins);
 
     findResistanceLevels(localMaxs);
+  }
+
+  private void displaySupportResistanceLevels() {
+    List<Double> localMins = Lists.newArrayList();
+    List<Double> localMaxs = Lists.newArrayList();
+
+    createLocalMinMaxList(localMins, localMaxs);
+
+    findSupportLevels(localMins);
+
+    findResistanceLevels(localMaxs);
+
+    printSupportLevels();
+    printResistanceLevels();
   }
 
   /**
@@ -186,9 +221,12 @@ public class BreakoutService {
   }
 
   public void printSupportLevels() {
-    System.out.println("Support Level");
-    for (int i = 0; i < supportLevels.size(); i++) {
-      System.out.print(supportLevels.get(i) + ",  ");
+    if (CollectionUtils.isNotEmpty(supportLevels)) {
+      System.out.print("Support Level ::  ");
+      for (int i = 0; i < supportLevels.size(); i++) {
+        System.out.print(supportLevels.get(i) + ",  ");
+      }
+      System.out.println();
     }
   }
 
@@ -197,9 +235,12 @@ public class BreakoutService {
   }
 
   public void printResistanceLevels() {
-    System.out.println("Resistance Level");
-    for (int i = 0; i < resistanceLevels.size(); i++) {
-      System.out.print(resistanceLevels.get(i) + ",  ");
+    if (CollectionUtils.isNotEmpty(resistanceLevels)) {
+      System.out.print("Resistance Level ::  ");
+      for (int i = 0; i < resistanceLevels.size(); i++) {
+        System.out.print(resistanceLevels.get(i) + ",  ");
+      }
+      System.out.println();
     }
   }
 

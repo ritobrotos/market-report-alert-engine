@@ -118,4 +118,18 @@ public class CommonReportService {
     consolidatedReport.setResistanceLevels(breakoutService.getResistanceLevels());
   }
 
+  public void findGainLosePercent(List<Quote> history, Report consolidatedReport) {
+    int size = history.size();
+    double ltp = history.get(size - 1).getClose();
+    double oneDayOldLtp = history.get(size - 2).getClose();
+
+    if (ltp > oneDayOldLtp) {
+      consolidatedReport.setGainPercent(MathUtility.risePercent(ltp, oneDayOldLtp));
+      consolidatedReport.setLosePercent(null);
+    } else {
+      consolidatedReport.setLosePercent(MathUtility.declinePercent(ltp, oneDayOldLtp));
+      consolidatedReport.setGainPercent(null);
+    }
+  }
+
 }

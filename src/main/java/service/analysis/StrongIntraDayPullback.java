@@ -2,6 +2,7 @@ package main.java.service.analysis;
 
 import constant.ConstantVariable;
 import constant.YHDStockUrlList;
+import main.java.constant.FnoStockList;
 import main.java.constant.ProspectiveBuyStockList;
 import main.java.model.ProspectiveBuyStock;
 import model.Quote;
@@ -21,26 +22,38 @@ import java.util.Map;
  */
 public class StrongIntraDayPullback {
 
+  private static final int ATR_PERIOD_LENGTH = 10;
+  private static final boolean GET_DATA_FROM_CACHE = true;
+
   public static void main(String[] args) {
-    Map<String, ProspectiveBuyStock> prospectiveBuyMap = ProspectiveBuyStockList.getProspectiveBuyStockMap();
-    Iterator it = prospectiveBuyMap.entrySet().iterator();
-    while (it.hasNext()) {
-      Map.Entry pair = (Map.Entry) it.next();
-      ProspectiveBuyStock prospectStock = (ProspectiveBuyStock) pair.getValue();
-      find(prospectStock.getStock());
+//    Map<String, ProspectiveBuyStock> prospectiveBuyMap = ProspectiveBuyStockList.getProspectiveBuyStockMap();
+//    Iterator it = prospectiveBuyMap.entrySet().iterator();
+//    while (it.hasNext()) {
+//      Map.Entry pair = (Map.Entry) it.next();
+//      ProspectiveBuyStock prospectStock = (ProspectiveBuyStock) pair.getValue();
+//      find(prospectStock.getStock());
+//    }
+
+    List<StockFact> fnoStockList = FnoStockList.getFnoStockList();
+    for (StockFact stock : fnoStockList) {
+      find(stock);
     }
   }
 
   private static void find(StockFact stock) {
     List<Quote> history = HistoricalDataService.getHistoricalDataWithCacheOption(
         stock,
-        ConstantVariable.FETCH_HISTORY_HALF_YEARLY, true);
+        ConstantVariable.FETCH_HISTORY_HALF_YEARLY, GET_DATA_FROM_CACHE);
+
+    if (history == null) {
+      return;
+    }
 
     int size = history.size();
-    for (int i = 10; i < size; i++) {
+    for (int i = ATR_PERIOD_LENGTH; i < size; i++) {
       Quote tick = history.get(i);
 
-      List<Quote> historySublist =  history.subList(i-10, i);
+      List<Quote> historySublist =  history.subList(i - ATR_PERIOD_LENGTH, i);
       double atr = IndicatorUtility.calculateAtr(historySublist);
       double atrPerc = (atr/history.get(i).getClose()) * 100;
 
